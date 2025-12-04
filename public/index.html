@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Call App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 1200px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .room-section {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        input {
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 300px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            margin-top: 30px;
+        }
+
+        #remoteVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .local-video-wrapper {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 250px;
+            height: 140px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        #localVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .mute-btn { background: #4CAF50; }
+        .video-btn { background: #2196F3; }
+        .screen-btn { background: #FF9800; }
+        .hang-up-btn { background: #f44336; }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .room-info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .room-info strong {
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .local-video-wrapper {
+                width: 150px;
+                height: 85px;
+                bottom: 80px;
+                right: 10px;
+            }
+            
+            input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 Video Call App</h1>
+        
+        <div class="room-section">
+            <input type="text" id="roomId" placeholder="Enter Room ID">
+            <button id="joinBtn">Join Room</button>
+        </div>
+
+        <div class="video-container" style="display: none;">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="local-video-wrapper">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="video-label">You</div>
+            </div>
+        </div>
+
+        <div class="controls" style="display: none;">
+            <button class="control-btn mute-btn" id="muteBtn" title="Mute/Unmute">🎤</button>
+            <button class="control-btn video-btn" id="videoBtn" title="Camera On/Off">📹</button>
+            <button class="control-btn screen-btn" id="screenBtn" title="Share Screen">🖥️</button>
+            <button class="control-btn hang-up-btn" id="hangUpBtn" title="Hang Up">📞</button>
+        </div>
+
+        <div id="status" class="status" style="display: none;"></div>
+        <div id="roomInfo" class="room-info" style="display: none;"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let localStream;
+        let remoteStream;
+        let peerConnection;
+        let roomId;
+        let isAudioMuted = false;
+        let isVideoMuted = false;
+        let isScreenSharing = false;
+        let originalStream;
+
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        const joinBtn = document.getElementById('joinBtn');
+        const roomInput = document.getElementById('roomId');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const muteBtn = document.getElementById('muteBtn');
+        const videoBtn = document.getElementById('videoBtn');
+        const screenBtn = document.getElementById('screenBtn');
+        const hangUpBtn = document.getElementById('hangUpBtn');
+        const statusDiv = document.getElementById('status');
+        const roomInfoDiv = document.getElementById('roomInfo');
+
+        // Check if room ID is in URL
+        window.addEventListener('load', () => {
+            const pathRoom = window.location.pathname.substring(1);
+            if (pathRoom) {
+                roomInput.value = pathRoom;
+                joinRoom();
+            }
+        });
+
+        joinBtn.addEventListener('click', joinRoom);
+        muteBtn.addEventListener('click', toggleAudio);
+        videoBtn.addEventListener('click', toggleVideo);
+        screenBtn.addEventListener('click', toggleScreenShare);
+        hangUpBtn.addEventListener('click', hangUp);
+
+        async function joinRoom() {
+            roomId = roomInput.value.trim();
+            if (!roomId) {
+                alert('Please enter a room ID');
+                return;
+            }
+
+            // Update URL without reloading
+            window.history.pushState({}, '', `/${roomId}`);
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+
+                originalStream = localStream;
+                localVideo.srcObject = localStream;
+                
+                document.querySelector('.video-container').style.display = 'block';
+                document.querySelector('.controls').style.display = 'flex';
+                document.querySelector('.room-section').style.display = 'none';
+                
+                showStatus('Connecting...', 'disconnected');
+                showRoomInfo(roomId);
+
+                socket.emit('join-room', roomId);
+            } catch (error) {
+                alert('Error accessing media devices: ' + error.message);
+            }
+        }
+
+        socket.on('user-connected', async (userId) => {
+            showStatus('User connected. Establishing connection...', 'connected');
+            await createPeerConnection();
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { roomId, offer });
+        });
+
+        socket.on('offer', async ({ offer }) => {
+            showStatus('Receiving call...', 'connected');
+            await createPeerConnection();
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { roomId, answer });
+        });
+
+        socket.on('answer', async ({ answer }) => {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            showStatus('Connected!', 'connected');
+        });
+
+        socket.on('ice-candidate', async ({ candidate }) => {
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (error) {
+                console.error('Error adding ICE candidate:', error);
+            }
+        });
+
+        socket.on('user-disconnected', () => {
+            showStatus('User disconnected', 'disconnected');
+            remoteVideo.srcObject = null;
+        });
+
+        async function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(configuration);
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+                showStatus('Connected!', 'connected');
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { roomId, candidate: event.candidate });
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                if (peerConnection.connectionState === 'disconnected') {
+                    showStatus('Connection lost', 'disconnected');
+                }
+            };
+        }
+
+        function toggleAudio() {
+            isAudioMuted = !isAudioMuted;
+            localStream.getAudioTracks()[0].enabled = !isAudioMuted;
+            muteBtn.textContent = isAudioMuted ? '🔇' : '🎤';
+            muteBtn.style.background = isAudioMuted ? '#666' : '#4CAF50';
+        }
+
+        function toggleVideo() {
+            isVideoMuted = !isVideoMuted;
+            localStream.getVideoTracks()[0].enabled = !isVideoMuted;
+            videoBtn.textContent = isVideoMuted ? '📷' : '📹';
+            videoBtn.style.background = isVideoMuted ? '#666' : '#2196F3';
+        }
+
+        async function toggleScreenShare() {
+            if (!isScreenSharing) {
+                try {
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: true
+                    });
+
+                    const videoTrack = screenStream.getVideoTracks()[0];
+                    
+                    // Replace video track in peer connection
+                    const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(videoTrack);
+                    }
+
+                    // Update local video
+                    localStream = new MediaStream([
+                        videoTrack,
+                        originalStream.getAudioTracks()[0]
+                    ]);
+                    localVideo.srcObject = localStream;
+
+                    isScreenSharing = true;
+                    screenBtn.style.background = '#666';
+                    screenBtn.textContent = '🎥';
+
+                    // Handle screen share stop
+                    videoTrack.onended = () => {
+                        stopScreenShare();
+                    };
+
+                } catch (error) {
+                    console.error('Error sharing screen:', error);
+                    alert('Could not share screen: ' + error.message);
+                }
+            } else {
+                stopScreenShare();
+            }
+        }
+
+        function stopScreenShare() {
+            const videoTrack = originalStream.getVideoTracks()[0];
+            const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+            if (sender) {
+                sender.replaceTrack(videoTrack);
+            }
+
+            localStream = originalStream;
+            localVideo.srcObject = localStream;
+            
+            isScreenSharing = false;
+            screenBtn.style.background = '#FF9800';
+            screenBtn.textContent = '🖥️';
+        }
+
+        function hangUp() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            if (originalStream && originalStream !== localStream) {
+                originalStream.getTracks().forEach(track => track.stop());
+            }
+            if (peerConnection) {
+                peerConnection.close();
+            }
+            socket.emit('leave-room', roomId);
+            window.history.pushState({}, '', '/');
+            location.reload();
+        }
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        function showRoomInfo(room) {
+            const currentUrl = window.location.origin + '/' + room;
+            roomInfoDiv.innerHTML = `
+                <strong>Room ID:</strong> ${room}<br>
+                <strong>Share this link:</strong> <a href="${currentUrl}" target="_blank">${currentUrl}</a>
+            `;
+            roomInfoDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
