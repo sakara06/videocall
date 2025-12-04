@@ -1,0 +1,47 @@
+#animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: linear-gradient(
+    135deg,
+    #211E3F 0%,
+    #2E2658 20%,
+    #5744A8 40%,
+    #6072D6 60%,
+    #609FDC 80%,
+    #7C61FF 100%
+  );
+}
+
+.square {
+  position: absolute;
+  border-radius: 35px;
+  opacity: 0.5;
+  transition: opacity 0.5s;
+}
+  
+
+@keyframes welcomeFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

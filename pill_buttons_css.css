@@ -1,0 +1,72 @@
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 20px;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.pills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pill-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.pill-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.pill-button img:not(.delete-icon) {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+
+.delete-icon {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px !important;
+  height: 24px !important;
+  cursor: pointer;
+  background: white;
+  border-radius: 50%;
+  padding: 2px;
+}
+
+@media (max-width: 768px) {
+  #welcome-text {
+    font-size: 2.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+  }
+  
+  #categories-container {
+    grid-template-columns: 1fr;
+  }
+}

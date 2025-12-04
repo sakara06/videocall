@@ -1,219 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Call App</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="bg_css.css" rel="stylesheet"/>
+<title>Video Call App</title>
+<style>
+    * {margin: 0; padding: 0; box-sizing: border-box;}
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    .container {
+        width: 90%;
+        max-width: 1400px;
+    }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
-            max-width: 1200px;
-            width: 90%;
-        }
+    .room-section {
+        text-align: center;
+        margin-bottom: 20px;
+    }
 
-        h1 {
-            color: #667eea;
-            margin-bottom: 30px;
-            text-align: center;
-        }
+    input {
+        padding: 12px 20px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        width: 300px;
+        margin-right: 10px;
+    }
 
-        .room-section {
-            margin-bottom: 30px;
-            text-align: center;
-        }
+    button {
+        padding: 12px 30px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
 
-        input {
-            padding: 12px 20px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 300px;
-            margin-right: 10px;
-        }
+    button:hover { background: #5568d3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
 
-        button {
-            padding: 12px 30px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
+    .video-container {
+        position: relative;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        aspect-ratio: 16/9;
+    }
 
-        button:hover {
-            background: #5568d3;
-        }
+    #remoteVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
 
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+    .local-video-wrapper {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 15%;
+        height: 15%;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        z-index: 10;
+    }
 
-        .video-container {
-            position: relative;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 16/9;
-            margin-top: 30px;
-        }
+    #localVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
 
-        #remoteVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .video-label {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
 
-        .local-video-wrapper {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 250px;
-            height: 140px;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 3px solid white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            z-index: 10;
-        }
+    .controls {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 20;
+        background: rgba(0,0,0,0.3);
+        padding: 10px 20px;
+        border-radius: 40px;
+        backdrop-filter: blur(6px);
+    }
 
-        #localVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .control-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.3s;
+    }
 
-        .video-label {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
+    .control-btn:hover { transform: scale(1.1); }
+    .mute-btn { background: #4CAF50; }
+    .video-btn { background: #2196F3; }
+    .screen-btn { background: #FF9800; }
+    .hang-up-btn { background: #f44336; }
 
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
+    .status {
+        text-align: center;
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
 
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
+    .status.connected { background: #d4edda; color: #155724; }
+    .status.disconnected { background: #f8d7da; color: #721c24; }
 
-        .mute-btn { background: #4CAF50; }
-        .video-btn { background: #2196F3; }
-        .screen-btn { background: #FF9800; }
-        .hang-up-btn { background: #f44336; }
+    .room-info {
+        text-align: center;
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 8px;
+    }
 
-        .status {
-            text-align: center;
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: 500;
-        }
+    .room-info strong { color: #667eea; }
 
-        .status.connected {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status.disconnected {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .room-info {
-            text-align: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: #f0f0f0;
-            border-radius: 8px;
-        }
-
-        .room-info strong {
-            color: #667eea;
-        }
-
-        @media (max-width: 768px) {
-            .local-video-wrapper {
-                width: 150px;
-                height: 85px;
-                bottom: 80px;
-                right: 10px;
-            }
-            
-            input {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-
-            .control-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
-            }
-        }
-    </style>
+    @media (max-width: 768px) {
+        .local-video-wrapper { width: 150px; height: 85px; bottom: 100px; right: 10px; }
+        input { width: 100%; margin-bottom: 10px; }
+        .control-btn { width: 50px; height: 50px; font-size: 20px; }
+    }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎥 Video Call App</h1>
-        
-        <div class="room-section">
-            <input type="text" id="roomId" placeholder="Enter Room ID">
-            <button id="joinBtn">Join Room</button>
-        </div>
+    <div id="animated-background"></div>
 
-        <div class="video-container" style="display: none;">
-            <video id="remoteVideo" autoplay playsinline></video>
-            <div class="local-video-wrapper">
-                <video id="localVideo" autoplay muted playsinline></video>
-                <div class="video-label">You</div>
-            </div>
-        </div>
+<div class="container">
+    <div class="room-section">
+        <input type="text" id="roomId" placeholder="Kirjoita puhelun ID">
+        <button id="joinBtn">Liity</button>
+    </div>
 
+    <div class="video-container" style="display: none;">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="local-video-wrapper">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div class="video-label">Sinä</div>
+        </div>
         <div class="controls" style="display: none;">
             <button class="control-btn mute-btn" id="muteBtn" title="Mute/Unmute">🎤</button>
             <button class="control-btn video-btn" id="videoBtn" title="Camera On/Off">📹</button>
             <button class="control-btn screen-btn" id="screenBtn" title="Share Screen">🖥️</button>
             <button class="control-btn hang-up-btn" id="hangUpBtn" title="Hang Up">📞</button>
         </div>
-
-        <div id="status" class="status" style="display: none;"></div>
-        <div id="roomInfo" class="room-info" style="display: none;"></div>
     </div>
+
+    <div id="status" class="status" style="display: none;"></div>
+    <div id="roomInfo" class="room-info" style="display: none;"></div>
+</div>
+
+
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -263,7 +233,7 @@
         async function joinRoom() {
             roomId = roomInput.value.trim();
             if (!roomId) {
-                alert('Please enter a room ID');
+                alert('Kirjoita puhelun ID');
                 return;
             }
 
@@ -450,6 +420,7 @@
             `;
             roomInfoDiv.style.display = 'block';
         }
+
     </script>
 </body>
 </html>
